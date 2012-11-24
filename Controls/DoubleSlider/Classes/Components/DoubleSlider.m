@@ -8,7 +8,7 @@
 
 #import "DoubleSlider.h"
 
-#define kMinHandleDistance          10.0
+#define kMinHandleDistance          15.0
 #define kBoundaryValueThreshold     0.01
 #define kMovingAnimationDuration    0.3
 
@@ -41,7 +41,7 @@ static const CGFloat colors [] = {
 
 #pragma mark Object initialization
 
-- (id) initWithFrame:(CGRect)aFrame minValue:(float)aMinValue maxValue:(float)aMaxValue barHeight:(float)height
+- (id) initWithFrame:(CGRect)aFrame minValue:(float)aMinValue maxValue:(float)aMaxValue barHeight:(float)height singleSlider:(BOOL)singleSlider
 {
     self = [super initWithFrame:aFrame];
     if (self)
@@ -58,23 +58,53 @@ static const CGFloat colors [] = {
 		sliderBarHeight = height;
         sliderBarWidth = self.frame.size.width / self.transform.a;  //calculate the actual bar width by dividing with the cos of the view's angle
 		
-		self.minHandle = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"handle.png"] highlightedImage:[UIImage imageNamed:@"handle_highlight.png"]] autorelease];
-		self.minHandle.center = CGPointMake(sliderBarWidth * 0.2, sliderBarHeight * 0.5);
+		/*
+         * Min-Max button
+         */
+		self.minHandle = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON] highlightedImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON]] autorelease];
+        self.minHandle.frame = CGRectMake(0, 0, 30, 40);
+        self.minHandle.center = CGPointMake(sliderBarWidth * 0.2, sliderBarHeight * 0.5);
+        self.minHandle.backgroundColor = [UIColor clearColor];
 		[self addSubview:self.minHandle];
 		
-		self.maxHandle = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"handle.png"] highlightedImage:[UIImage imageNamed:@"handle_highlight.png"]] autorelease];
-		self.maxHandle.center = CGPointMake(sliderBarWidth * 0.8, sliderBarHeight * 0.5);
-		[self addSubview:self.maxHandle];
+        self.maxHandle = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON] highlightedImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON]] autorelease];
+        self.maxHandle.frame = CGRectMake(0, 0, 30, 40);
+        self.maxHandle.center = CGPointMake(sliderBarWidth * 0.8, sliderBarHeight * 0.5);
+        self.maxHandle.backgroundColor = [UIColor clearColor];
+        
+        /*
+         * Single slider
+         */
+        _singleSlider = singleSlider;
+        if (!singleSlider) {
+            [self addSubview:self.maxHandle];
+        }
 		
-		bgColor = CGColorRetain([UIColor darkGrayColor].CGColor);
+		bgColor = CGColorRetain([UIColor colorWithPatternImage:[UIImage imageNamed:BACKGROUND_ON_BAR_HOVER]].CGColor);
 		self.backgroundColor = [UIColor clearColor];
 		
 		//init
         latchMin = NO;
         latchMax = NO;
 		[self updateValues];
+        
+        // contentView
+        contentView = [[UIView alloc] initWithFrame:self.bounds];
+        contentView.backgroundColor = [UIColor clearColor];
+        contentView.userInteractionEnabled = NO;
+        contentView.opaque = NO;
+        
+        [self addSubview:contentView];
+        
+        [self bringSubviewToFront:self.maxHandle];
+        [self bringSubviewToFront:self.minHandle];
 	}
 	return self;
+}
+
+- (id) initWithFrame:(CGRect)aFrame minValue:(float)aMinValue maxValue:(float)aMaxValue barHeight:(float)height
+{
+	return [self initWithFrame:aFrame minValue:aMinValue maxValue:aMaxValue barHeight:height singleSlider:NO];
 }
 
 - (void) moveSlidersToPosition:(NSNumber *)leftSlider: (NSNumber *)rightSlider animated:(BOOL)animated {
@@ -148,6 +178,11 @@ static const CGFloat colors [] = {
 
 - (void) drawRect:(CGRect)rect
 {
+    if (_singleSlider == YES) {
+        [super drawRect:rect];
+        return;
+    }
+    
 	//FIX: optimise and save some reusable stuff
 	
     CGColorSpaceRef baseSpace = CGColorSpaceCreateDeviceRGB();
@@ -160,7 +195,7 @@ static const CGFloat colors [] = {
 	CGRect rect1 = CGRectMake(0.0, 0.0, self.minHandle.center.x, sliderBarHeight);
 	CGRect rect2 = CGRectMake(self.minHandle.center.x, 0.0, self.maxHandle.center.x - self.minHandle.center.x, sliderBarHeight);
 	CGRect rect3 = CGRectMake(self.maxHandle.center.x, 0.0, sliderBarWidth - self.maxHandle.center.x, sliderBarHeight);
-    	
+    
     CGContextSaveGState(context);
 	
     CGPoint startPoint = CGPointMake(CGRectGetMidX(rect), CGRectGetMinY(rect));
@@ -199,6 +234,40 @@ static const CGFloat colors [] = {
 
 #pragma mark Helper
 
+- (float)calculateInterval:(UIView *)handle
+{
+    float selectedValue;
+    if ([self.minHandle isEqual:handle]) {
+        self.minSelectedValue += minValue;
+        selectedValue = self.minSelectedValue;
+    } else {
+        self.maxSelectedValue += minValue;
+        self.maxSelectedValue = self.maxSelectedValue;
+    }
+    
+    if (handle.center.x < sectionPos[0]) {
+        selectedValue = handle.center.x * interval[0];
+        //NSLog(@"[0] min selected value %f", self.minSelectedValue);
+        
+    } else if (handle.center.x < sectionPos[1]) {
+        selectedValue = calValueSection(1) + (handle.center.x - sectionPos[0]) * interval[1];
+        //NSLog(@"[1] min selected value %f", self.minSelectedValue);
+        
+    } else if (handle.center.x < sectionPos[2]) {
+        selectedValue = calValueSection(2) + (handle.center.x - sectionPos[1]) * interval[2];
+        //NSLog(@"[2][%f] min selected value %f", sectionWidth[2], self.minSelectedValue);
+        
+    } else if (handle.center.x < sectionPos[3]) {
+        selectedValue = calValueSection(3) + (handle.center.x - sectionPos[2]) * interval[3];
+        //NSLog(@"[3] min selected value %f", self.minSelectedValue);
+        
+    } else {
+        NSLog(@"[4] min selected value not in any range %f", handle.center.x);
+    }
+    
+    return selectedValue;
+}
+
 - (void)updateHandleImages
 {
     self.minHandle.highlighted = latchMin;
@@ -207,11 +276,17 @@ static const CGFloat colors [] = {
 
 - (void)updateValues
 {
-	self.minSelectedValue = minValue + self.minHandle.center.x / sliderBarWidth * valueSpan;
+	self.minSelectedValue = minValue + (self.minHandle.center.x + self.minHandle.frame.size.width / 2) / sliderBarWidth * valueSpan;
+    self.maxSelectedValue = minValue + (self.maxHandle.center.x - self.maxHandle.frame.size.width / 2) / sliderBarWidth * valueSpan;
+    
+    if (_preciseValue) {
+        self.minSelectedValue = [self calculateInterval:self.minHandle];
+        self.maxSelectedValue = [self calculateInterval:self.maxHandle];
+    }
+    
     //snap to min value
     if (self.minSelectedValue < minValue + kBoundaryValueThreshold * valueSpan) self.minSelectedValue = minValue;
-        
-    self.maxSelectedValue = minValue + self.maxHandle.center.x / sliderBarWidth * valueSpan;
+    
     //snap to max value
     if (self.maxSelectedValue > maxValue - kBoundaryValueThreshold * valueSpan) self.maxSelectedValue = maxValue;
 }

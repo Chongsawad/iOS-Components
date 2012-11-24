@@ -6,6 +6,26 @@
 //  Copyright 2010 locus-delicti.com. All rights reserved.
 //
 
+#define BACKGROUND_SLIDE_BAR @"bg-slide-bar.png"
+#define BACKGROUND_HANDLE_BUTTON @"bt-handle-button.png"
+#define BACKGROUND_ON_BAR_HOVER @"bg-slide-bar-ac.png"
+
+static const float interval[4] = {0.01f, 0.05f, 0.1f, 0.5f};
+static const float sectionWidth[4] = {170, 60, 25, 5};
+static const float sectionPos[4] = {170, 230, 255, 260};
+
+static float calValueSection(int s) {
+    if (s == 0) {
+        return 0.f;
+    } else if (s == 1) {
+        return interval[0] * sectionWidth[0];
+    } else if (s == 2) {
+        return interval[1] * sectionWidth[1] + interval[0] * sectionWidth[0];
+    } else if (s == 3) {
+        return interval[2] * sectionWidth[2] + interval[1] * sectionWidth[1] + interval[0] * sectionWidth[0];
+    }
+    return 0;
+}
 
 @interface DoubleSlider : UIControl {
 	float minSelectedValue;
@@ -23,7 +43,15 @@
     float sliderBarWidth;
 	
 	CGColorRef bgColor;
+    
+    // ContentView
+    UIView *contentView;
+    
+    // Single slider
+    BOOL _singleSlider, _preciseValue;
 }
+
+@property BOOL singleSlider, preciseValue;
 
 @property float minSelectedValue;
 @property float maxSelectedValue;
@@ -32,8 +60,11 @@
 @property (nonatomic, retain) UIImageView *maxHandle;
 
 - (id) initWithFrame:(CGRect)aFrame minValue:(float)minValue maxValue:(float)maxValue barHeight:(float)height;
+- (id) initWithFrame:(CGRect)aFrame minValue:(float)aMinValue maxValue:(float)aMaxValue barHeight:(float)height singleSlider:(BOOL)singleSlider;
+
 + (id) doubleSlider;
 - (void) moveSlidersToPosition:(NSNumber *)leftSlider:(NSNumber *)rightSlider animated:(BOOL)animated;
+- (void)updateValues;
 
 @end
 
