@@ -8,10 +8,6 @@
 
 #import "DoubleSlider.h"
 
-#define kMinHandleDistance          15.0
-#define kBoundaryValueThreshold     0.01
-#define kMovingAnimationDuration    0.3
-
 //create the gradient
 static const CGFloat colors [] = { 
 	0.6, 0.6, 1.0, 1.0, 
@@ -65,13 +61,15 @@ static const CGFloat colors [] = {
         self.minHandle.frame = CGRectMake(0, 0, 30, 40);
         self.minHandle.center = CGPointMake(sliderBarWidth * 0.2, sliderBarHeight * 0.5);
         self.minHandle.backgroundColor = [UIColor clearColor];
+        self.minHandle.clipsToBounds = NO;
+        
 		[self addSubview:self.minHandle];
 		
         self.maxHandle = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON] highlightedImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON]] autorelease];
         self.maxHandle.frame = CGRectMake(0, 0, 30, 40);
         self.maxHandle.center = CGPointMake(sliderBarWidth * 0.8, sliderBarHeight * 0.5);
         self.maxHandle.backgroundColor = [UIColor clearColor];
-        
+        self.maxHandle.clipsToBounds = NO;
         /*
          * Single slider
          */
@@ -147,15 +145,29 @@ static const CGFloat colors [] = {
 - (BOOL)continueTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
 {
 	CGPoint touchPoint = [touch locationInView:self];
+    
 	if ( latchMin || CGRectContainsPoint(self.minHandle.frame, touchPoint) ) {
-		if (touchPoint.x < self.maxHandle.center.x - kMinHandleDistance && touchPoint.x > 0.0) {
-			self.minHandle.center = CGPointMake(touchPoint.x, self.minHandle.center.y);
-			[self updateValues];
-		}
+        if (_singleSlider) {
+            if (touchPoint.x < self.maxHandle.frame.origin.x && touchPoint.x > 0) {
+                
+                float point = MAX(touchPoint.x, self.minHandle.frame.size.width / 2);
+                self.minHandle.center = CGPointMake(point, self.minHandle.center.y);
+                
+                [self updateValues];
+            }
+        } else if (touchPoint.x < self.maxHandle.frame.origin.x - self.maxHandle.frame.size.width / 2 && touchPoint.x > 0) {
+            
+            float point = MAX(touchPoint.x, self.minHandle.frame.size.width / 2);
+            self.minHandle.center = CGPointMake(point, self.minHandle.center.y);
+            
+            [self updateValues];
+        }
 	}
 	else if ( latchMax || CGRectContainsPoint(self.maxHandle.frame, touchPoint) ) {
-		if (touchPoint.x > self.minHandle.center.x + kMinHandleDistance && touchPoint.x < sliderBarWidth) {
-			self.maxHandle.center = CGPointMake(touchPoint.x, self.maxHandle.center.y);
+		if (touchPoint.x - self.maxHandle.frame.size.width / 2 > self.minHandle.frame.origin.x + self.minHandle.frame.size.width && touchPoint.x < sliderBarWidth - self.maxHandle.frame.size.width / 2) {
+            
+            float point = MIN(touchPoint.x, sliderBarWidth - self.maxHandle.frame.size.width / 2);
+            self.maxHandle.center = CGPointMake(point, self.maxHandle.center.y);
 			[self updateValues];
 		}
 	}
@@ -236,33 +248,62 @@ static const CGFloat colors [] = {
 
 - (float)calculateInterval:(UIView *)handle
 {
-    float selectedValue;
-    if ([self.minHandle isEqual:handle]) {
+    float selectedValue, point;
+    if (_singleSlider) {
         self.minSelectedValue += minValue;
         selectedValue = self.minSelectedValue;
+        point = handle.frame.origin.x - kMinHandleDistance;
+        
+        if (point < sectionPosForSingleSlider[0]) {
+            selectedValue = point * interval[0];
+            NSLog(@"[0][%.2f] min selected value %f", point, selectedValue);
+            
+        } else if (point < sectionPosForSingleSlider[1]) {
+            selectedValue = calValueSectionWithSingleSlider(1) + (point - sectionPosForSingleSlider[0]) * interval[1];
+            NSLog(@"[1][%.2f] min selected value %f", point, selectedValue);
+            
+        } else if (point < sectionPosForSingleSlider[2]) {
+            selectedValue = calValueSectionWithSingleSlider(2) + (point - sectionPosForSingleSlider[1]) * interval[2];
+            NSLog(@"[2][%.2f] min selected value %f", point, selectedValue);
+            
+        } else if (point < sectionPosForSingleSlider[3]) {
+            selectedValue = calValueSectionWithSingleSlider(3) + (point - sectionPosForSingleSlider[2]) * interval[3];
+            NSLog(@"[3][%.2f] min selected value %f", point, selectedValue);
+            
+        } else {
+            NSLog(@"[4] min selected value not in any range %f", point);
+        }
+        
     } else {
-        self.maxSelectedValue += minValue;
-        self.maxSelectedValue = self.maxSelectedValue;
-    }
-    
-    if (handle.center.x < sectionPos[0]) {
-        selectedValue = handle.center.x * interval[0];
-        //NSLog(@"[0] min selected value %f", self.minSelectedValue);
+        if ([self.minHandle isEqual:handle]) {
+            self.minSelectedValue += minValue;
+            selectedValue = self.minSelectedValue;
+            point = handle.frame.origin.x + handle.frame.size.width;
+        } else {
+            self.maxSelectedValue += minValue;
+            self.maxSelectedValue = self.maxSelectedValue;
+            point = handle.frame.origin.x - kMinHandleDistance;
+        }
         
-    } else if (handle.center.x < sectionPos[1]) {
-        selectedValue = calValueSection(1) + (handle.center.x - sectionPos[0]) * interval[1];
-        //NSLog(@"[1] min selected value %f", self.minSelectedValue);
-        
-    } else if (handle.center.x < sectionPos[2]) {
-        selectedValue = calValueSection(2) + (handle.center.x - sectionPos[1]) * interval[2];
-        //NSLog(@"[2][%f] min selected value %f", sectionWidth[2], self.minSelectedValue);
-        
-    } else if (handle.center.x < sectionPos[3]) {
-        selectedValue = calValueSection(3) + (handle.center.x - sectionPos[2]) * interval[3];
-        //NSLog(@"[3] min selected value %f", self.minSelectedValue);
-        
-    } else {
-        NSLog(@"[4] min selected value not in any range %f", handle.center.x);
+        if (point < sectionPos[0]) {
+            selectedValue = point * interval[0];
+            NSLog(@"[0][%.2f] min selected value %f", point, selectedValue);
+            
+        } else if (point < sectionPos[1]) {
+            selectedValue = calValueSection(1) + (point - sectionPos[0]) * interval[1];
+            NSLog(@"[1][%.2f] min selected value %f", point, selectedValue);
+            
+        } else if (point < sectionPos[2]) {
+            selectedValue = calValueSection(2) + (point - sectionPos[1]) * interval[2];
+            NSLog(@"[2][%.2f] min selected value %f", point, selectedValue);
+            
+        } else if (point < sectionPos[3]) {
+            selectedValue = calValueSection(3) + (point - sectionPos[2]) * interval[3];
+            NSLog(@"[3][%.2f] min selected value %f", point, selectedValue);
+            
+        } else {
+            NSLog(@"[4] min selected value not in any range %f", point);
+        }
     }
     
     return selectedValue;
@@ -276,8 +317,12 @@ static const CGFloat colors [] = {
 
 - (void)updateValues
 {
-	self.minSelectedValue = minValue + (self.minHandle.center.x + self.minHandle.frame.size.width / 2) / sliderBarWidth * valueSpan;
-    self.maxSelectedValue = minValue + (self.maxHandle.center.x - self.maxHandle.frame.size.width / 2) / sliderBarWidth * valueSpan;
+	self.minSelectedValue = minValue + (self.minHandle.frame.origin.x + self.minHandle.frame.size.width) / sliderBarWidth * valueSpan;
+    self.maxSelectedValue = minValue + (self.maxHandle.frame.origin.x - kMinHandleDistance) / sliderBarWidth * valueSpan;
+    if (_snapCenter) {
+        self.minSelectedValue = minValue + self.minHandle.center.x / sliderBarWidth * valueSpan;
+        self.maxSelectedValue = minValue + self.maxHandle.center.x / sliderBarWidth * valueSpan;
+    }
     
     if (_preciseValue) {
         self.minSelectedValue = [self calculateInterval:self.minHandle];

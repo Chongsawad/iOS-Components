@@ -10,9 +10,16 @@
 #define BACKGROUND_HANDLE_BUTTON @"bt-handle-button.png"
 #define BACKGROUND_ON_BAR_HOVER @"bg-slide-bar-ac.png"
 
+#define kMinHandleDistance          1.0
+#define kBoundaryValueThreshold     0.01
+#define kMovingAnimationDuration    0.3
+
 static const float interval[4] = {0.01f, 0.05f, 0.1f, 0.5f};
-static const float sectionWidth[4] = {170, 60, 25, 5};
-static const float sectionPos[4] = {170, 230, 255, 260};
+static const float sectionWidth[4] = {170, 28, 15, 5};
+static const float sectionPos[4] = {170, 198, 213, 230};
+
+static const float sectionWidthForSingleSlider[4] = {170, 40, 15, 999};
+static const float sectionPosForSingleSlider[4] = {170, 210, 225, 999};
 
 static float calValueSection(int s) {
     if (s == 0) {
@@ -23,6 +30,19 @@ static float calValueSection(int s) {
         return interval[1] * sectionWidth[1] + interval[0] * sectionWidth[0];
     } else if (s == 3) {
         return interval[2] * sectionWidth[2] + interval[1] * sectionWidth[1] + interval[0] * sectionWidth[0];
+    }
+    return 0;
+}
+
+static float calValueSectionWithSingleSlider(int s) {
+    if (s == 0) {
+        return 0.f;
+    } else if (s == 1) {
+        return interval[0] * sectionWidthForSingleSlider[0];
+    } else if (s == 2) {
+        return interval[1] * sectionWidthForSingleSlider[1] + interval[0] * sectionWidthForSingleSlider[0];
+    } else if (s == 3) {
+        return interval[2] * sectionWidthForSingleSlider[2] + interval[1] * sectionWidthForSingleSlider[1] + interval[0] * sectionWidthForSingleSlider[0];
     }
     return 0;
 }
@@ -49,9 +69,11 @@ static float calValueSection(int s) {
     
     // Single slider
     BOOL _singleSlider, _preciseValue;
+    BOOL _snapToGrid, _snapCenter;
 }
 
 @property BOOL singleSlider, preciseValue;
+@property (assign) BOOL snapToGrid, snapCenter;
 
 @property float minSelectedValue;
 @property float maxSelectedValue;
