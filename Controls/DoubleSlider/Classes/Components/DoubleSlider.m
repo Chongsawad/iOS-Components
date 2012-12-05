@@ -109,8 +109,8 @@ static const CGFloat colors [] = {
     CGFloat duration = animated ? kMovingAnimationDuration : 0.0;
     [UIView transitionWithView:self duration:duration options:UIViewAnimationOptionCurveLinear
                     animations:^(void){
-                        self.minHandle.center = CGPointMake(sliderBarWidth * ((float)[leftSlider intValue] / 100), sliderBarHeight * 0.5);
-                        self.maxHandle.center = CGPointMake(sliderBarWidth * ((float)[rightSlider intValue] / 100), sliderBarHeight * 0.5);
+                        self.minHandle.center = CGPointMake(sliderBarWidth * ((float)[leftSlider floatValue] / 100), sliderBarHeight * 0.5);
+                        self.maxHandle.center = CGPointMake(sliderBarWidth * ((float)[rightSlider floatValue] / 100), sliderBarHeight * 0.5);
                         [self updateValues];
                         //force redraw
                         [self setNeedsDisplay];
@@ -330,10 +330,14 @@ static const CGFloat colors [] = {
     }
     
     //snap to min value
-    if (self.minSelectedValue < minValue + kBoundaryValueThreshold * valueSpan) self.minSelectedValue = minValue;
+    if (self.minSelectedValue < minValue + kBoundaryValueThreshold * valueSpan) {
+        self.minSelectedValue = minValue;
+    }
     
     //snap to max value
-    if (self.maxSelectedValue > maxValue - kBoundaryValueThreshold * valueSpan) self.maxSelectedValue = maxValue;
+    if (self.maxSelectedValue > maxValue - kBoundaryValueThreshold * valueSpan) {
+        self.maxSelectedValue = maxValue;
+    }
 }
 
 @end

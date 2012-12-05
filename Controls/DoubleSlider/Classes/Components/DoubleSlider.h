@@ -11,7 +11,7 @@
 #define BACKGROUND_ON_BAR_HOVER @"bg-slide-bar-ac.png"
 
 #define kMinHandleDistance          1.0
-#define kBoundaryValueThreshold     0.01
+#define kBoundaryValueThreshold     0.001
 #define kMovingAnimationDuration    0.3
 
 static const float interval[4] = {0.01f, 0.05f, 0.1f, 0.5f};
