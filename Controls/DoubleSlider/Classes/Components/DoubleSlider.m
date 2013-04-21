@@ -149,25 +149,24 @@ static const CGFloat colors [] = {
 	if ( latchMin || CGRectContainsPoint(self.minHandle.frame, touchPoint) ) {
         if (_singleSlider) {
             if (touchPoint.x < self.maxHandle.frame.origin.x && touchPoint.x > 0) {
-                
-                float point = MAX(touchPoint.x, self.minHandle.frame.size.width / 2);
+
+                float point = MAX(touchPoint.x, self.minHandle.frame.size.width / 4);
                 self.minHandle.center = CGPointMake(point, self.minHandle.center.y);
                 
                 [self updateValues];
             }
         } else if (touchPoint.x < self.maxHandle.frame.origin.x - self.maxHandle.frame.size.width / 2 && touchPoint.x > 0) {
             
-            float point = MAX(touchPoint.x, self.minHandle.frame.size.width / 2);
-            self.minHandle.center = CGPointMake(point, self.minHandle.center.y);
+            float point = MAX(touchPoint.x, self.minHandle.frame.size.width / 4);
+            self.minHandle.center = CGPointMake(point + 1, self.minHandle.center.y);
             
-            [self updateValues];
+            [self updateValues];	
         }
 	}
 	else if ( latchMax || CGRectContainsPoint(self.maxHandle.frame, touchPoint) ) {
-		if (touchPoint.x - self.maxHandle.frame.size.width / 2 > self.minHandle.frame.origin.x + self.minHandle.frame.size.width && touchPoint.x < sliderBarWidth - self.maxHandle.frame.size.width / 2) {
-            
-            float point = MIN(touchPoint.x, sliderBarWidth - self.maxHandle.frame.size.width / 2);
-            self.maxHandle.center = CGPointMake(point, self.maxHandle.center.y);
+		if (touchPoint.x - self.maxHandle.frame.size.width / 2 > self.minHandle.frame.origin.x + self.minHandle.frame.size.width) {
+            float point = MIN((float)touchPoint.x, (float)(sliderBarWidth - self.maxHandle.frame.size.width / 4.f));
+            self.maxHandle.center = CGPointMake(point - 1, self.maxHandle.center.y);
 			[self updateValues];
 		}
 	}
@@ -317,8 +316,9 @@ static const CGFloat colors [] = {
 
 - (void)updateValues
 {
-	self.minSelectedValue = minValue + (self.minHandle.frame.origin.x + self.minHandle.frame.size.width) / sliderBarWidth * valueSpan;
-    self.maxSelectedValue = minValue + (self.maxHandle.frame.origin.x - kMinHandleDistance) / sliderBarWidth * valueSpan;
+	self.minSelectedValue = minValue + (float)(self.minHandle.frame.origin.x + self.minHandle.frame.size.width) / sliderBarWidth * valueSpan;
+    self.maxSelectedValue = minValue + (float)(self.maxHandle.frame.origin.x - kMinHandleDistance) / sliderBarWidth * valueSpan;
+
     if (_snapCenter) {
         self.minSelectedValue = minValue + self.minHandle.center.x / sliderBarWidth * valueSpan;
         self.maxSelectedValue = minValue + self.maxHandle.center.x / sliderBarWidth * valueSpan;
@@ -338,6 +338,11 @@ static const CGFloat colors [] = {
     if (self.maxSelectedValue > maxValue - kBoundaryValueThreshold * valueSpan) {
         self.maxSelectedValue = maxValue;
     }
+
+	// check min <= max
+	if (self.minSelectedValue > self.maxSelectedValue) {
+		self.minSelectedValue = self.maxSelectedValue;
+	}
 }
 
 @end
