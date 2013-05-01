@@ -8,6 +8,7 @@
 
 #import "DoubleSlider.h"
 
+#define SLIDER_OFFSET 30
 //create the gradient
 static const CGFloat colors [] = { 
 	0.6, 0.6, 1.0, 1.0, 
@@ -42,6 +43,11 @@ static const CGFloat colors [] = {
     self = [super initWithFrame:aFrame];
     if (self)
 	{
+		/*
+         * Single slider
+         */
+        _singleSlider = singleSlider;
+		
 		if (aMinValue < aMaxValue) {
 			minValue = aMinValue;
 			maxValue = aMaxValue;
@@ -53,32 +59,54 @@ static const CGFloat colors [] = {
         valueSpan = maxValue - minValue;
 		sliderBarHeight = height;
         sliderBarWidth = self.frame.size.width / self.transform.a;  //calculate the actual bar width by dividing with the cos of the view's angle
+
+		UIImage *backgroundImage = [UIImage imageNamed:BACKGROUND_SLIDE_BAR];
+		CGRect barRect = CGRectMake(0, 0, backgroundImage.size.width, backgroundImage.size.height);
+
+		UIImageView *backgroundImageView = [[UIImageView alloc] initWithImage:backgroundImage];
+		backgroundImageView.backgroundColor = [UIColor clearColor];
+		backgroundImageView.frame = self.bounds;
+		backgroundImageView.contentMode = UIViewContentModeCenter;
+		backgroundImageView.userInteractionEnabled = NO;
+		[self addSubview:backgroundImageView];
+		[self sendSubviewToBack:backgroundImageView];
+
+		if (!_singleSlider) {
+			CGRect rangeBarRect = CGRectMake(0, (self.bounds.size.height - barRect.size.height) * 0.5f, barRect.size.width, barRect.size.height);
+			highlightedRangeBarView = [[UIView alloc] initWithFrame:rangeBarRect];
+			UIView *barImageView = [[UIView alloc] initWithFrame:barRect];
+			barImageView.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:BACKGROUND_ON_BAR_HOVER]];
+			barImageView.clipsToBounds = YES;
+			highlightedRangeBarView.clipsToBounds = YES;
+			highlightedRangeBarView.userInteractionEnabled = NO;
+			[highlightedRangeBarView addSubview:barImageView];
+			[self insertSubview:highlightedRangeBarView aboveSubview:backgroundImageView];
+		}
+
 		
 		/*
          * Min-Max button
          */
 		self.minHandle = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON] highlightedImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON]] autorelease];
-        self.minHandle.frame = CGRectMake(0, 0, 30, 40);
-        self.minHandle.center = CGPointMake(sliderBarWidth * 0.2, sliderBarHeight * 0.5);
+        self.minHandle.frame = CGRectMake(0, 0, 30, self.bounds.size.height);
+        self.minHandle.center = CGPointMake(sliderBarWidth * 0.2, SLIDER_OFFSET);
+		self.minHandle.contentMode = UIViewContentModeCenter;
         self.minHandle.backgroundColor = [UIColor clearColor];
         self.minHandle.clipsToBounds = NO;
         
 		[self addSubview:self.minHandle];
 		
         self.maxHandle = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON] highlightedImage:[UIImage imageNamed:BACKGROUND_HANDLE_BUTTON]] autorelease];
-        self.maxHandle.frame = CGRectMake(0, 0, 30, 40);
-        self.maxHandle.center = CGPointMake(sliderBarWidth * 0.8, sliderBarHeight * 0.5);
+        self.maxHandle.frame = CGRectMake(0, 0, 30, self.bounds.size.height);
+        self.maxHandle.center = CGPointMake(sliderBarWidth * 0.8, SLIDER_OFFSET);
+		self.maxHandle.contentMode = UIViewContentModeCenter;
         self.maxHandle.backgroundColor = [UIColor clearColor];
         self.maxHandle.clipsToBounds = NO;
-        /*
-         * Single slider
-         */
-        _singleSlider = singleSlider;
-        if (!singleSlider) {
+		
+        if (!_singleSlider) {
             [self addSubview:self.maxHandle];
         }
 		
-		bgColor = CGColorRetain([UIColor colorWithPatternImage:[UIImage imageNamed:BACKGROUND_ON_BAR_HOVER]].CGColor);
 		self.backgroundColor = [UIColor clearColor];
 		
 		//init
@@ -109,8 +137,8 @@ static const CGFloat colors [] = {
     CGFloat duration = animated ? kMovingAnimationDuration : 0.0;
     [UIView transitionWithView:self duration:duration options:UIViewAnimationOptionCurveLinear
                     animations:^(void){
-                        self.minHandle.center = CGPointMake(sliderBarWidth * ((float)[leftSlider floatValue] / 100), sliderBarHeight * 0.5);
-                        self.maxHandle.center = CGPointMake(sliderBarWidth * ((float)[rightSlider floatValue] / 100), sliderBarHeight * 0.5);
+                        self.minHandle.center = CGPointMake(sliderBarWidth * ((float)[leftSlider floatValue] / 100), SLIDER_OFFSET);
+                        self.maxHandle.center = CGPointMake(sliderBarWidth * ((float)[rightSlider floatValue] / 100), SLIDER_OFFSET);
                         [self updateValues];
                         //force redraw
                         [self setNeedsDisplay];
@@ -195,38 +223,34 @@ static const CGFloat colors [] = {
     }
     
 	//FIX: optimise and save some reusable stuff
-	
-    CGColorSpaceRef baseSpace = CGColorSpaceCreateDeviceRGB();
-    CGGradientRef gradient = CGGradientCreateWithColorComponents(baseSpace, colors, NULL, 2);
-    CGColorSpaceRelease(baseSpace), baseSpace = NULL;
-	
-    CGContextRef context = UIGraphicsGetCurrentContext();
-	CGContextClearRect(context, rect);
-	
-	CGRect rect1 = CGRectMake(0.0, 0.0, self.minHandle.center.x, sliderBarHeight);
-	CGRect rect2 = CGRectMake(self.minHandle.center.x, 0.0, self.maxHandle.center.x - self.minHandle.center.x, sliderBarHeight);
-	CGRect rect3 = CGRectMake(self.maxHandle.center.x, 0.0, sliderBarWidth - self.maxHandle.center.x, sliderBarHeight);
-    
-    CGContextSaveGState(context);
-	
-    CGPoint startPoint = CGPointMake(CGRectGetMidX(rect), CGRectGetMinY(rect));
-    CGPoint endPoint = CGPointMake(CGRectGetMidX(rect), CGRectGetMaxY(rect));
-	
-	//add the right rect
-	[self addToContext:context roundRect:rect3 withRoundedCorner1:NO corner2:YES corner3:YES corner4:NO radius:5.0f];
-	//add the left rect
-	[self addToContext:context roundRect:rect1 withRoundedCorner1:YES corner2:NO corner3:NO corner4:YES radius:5.0f];
-	
-    CGContextClip(context);
-    CGContextDrawLinearGradient(context, gradient, startPoint, endPoint, 0);
-	
-	CGGradientRelease(gradient), gradient = NULL;
-	
-	//draw middle rect
-    CGContextRestoreGState(context);
-	CGContextSetFillColorWithColor(context, bgColor);
-	CGContextFillRect(context, rect2);
-		
+	//	CGRect rect2 = CGRectMake(self.minHandle.frame.origin.x + self.minHandle.bounds.size.width, self.center.y - BACKGROUND_SLIDE_BAR_HEIGHT * 0.5, self.maxHandle.center.x - self.minHandle.center.x, BACKGROUND_SLIDE_BAR_HEIGHT);
+
+	//    CGColorSpaceRef baseSpace = CGColorSpaceCreateDeviceRGB();
+	//    CGGradientRef gradient = CGGradientCreateWithColorComponents(baseSpace, colors, NULL, 2);
+	//    CGColorSpaceRelease(baseSpace), baseSpace = NULL;
+	//	
+	//    CGContextRef context = UIGraphicsGetCurrentContext();
+	//	CGContextClearRect(context, rect);
+	//	
+	//	CGRect rect1 = CGRectMake(0.0, 0.0, self.minHandle.center.x, sliderBarHeight);
+	//	//	CGRect rect2 = CGRectMake(self.minHandle.center.x, 0.0, self.maxHandle.center.x - self.minHandle.center.x, sliderBarHeight);
+	//	CGRect rect3 = CGRectMake(self.maxHandle.center.x, 0.0, sliderBarWidth - self.maxHandle.center.x, sliderBarHeight);
+	//    
+	//    CGContextSaveGState(context);
+	//	
+	//    CGPoint startPoint = CGPointMake(CGRectGetMidX(rect), CGRectGetMinY(rect));
+	//    CGPoint endPoint = CGPointMake(CGRectGetMidX(rect), CGRectGetMaxY(rect));
+	//	
+	//	//add the right rect
+	//	[self addToContext:context roundRect:rect3 withRoundedCorner1:NO corner2:YES corner3:YES corner4:NO radius:5.0f];
+	//	//add the left rect
+	//	[self addToContext:context roundRect:rect1 withRoundedCorner1:YES corner2:NO corner3:NO corner4:YES radius:5.0f];
+	//	
+	//    CGContextClip(context);
+	//    CGContextDrawLinearGradient(context, gradient, startPoint, endPoint, 0);
+	//	
+	//	CGGradientRelease(gradient), gradient = NULL;
+
 	[super drawRect:rect];
 }
 

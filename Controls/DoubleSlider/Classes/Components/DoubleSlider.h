@@ -7,6 +7,12 @@
 //
 
 #define BACKGROUND_SLIDE_BAR @"bg-slide-bar.png"
+/*
+ * Important!
+ * use height for calculate highlighed bar range between minHandle and maxHandle
+ */
+#define BACKGROUND_SLIDE_BAR_HEIGHT 27
+
 #define BACKGROUND_HANDLE_BUTTON @"bt-handle-button.png"
 #define BACKGROUND_ON_BAR_HOVER @"bg-slide-bar-ac.png"
 
@@ -58,6 +64,7 @@ static float calValueSectionWithSingleSlider(int s) {
 	
 	UIImageView *minHandle;
 	UIImageView *maxHandle;
+	UIView *highlightedRangeBarView;
 	
 	float sliderBarHeight;
     float sliderBarWidth;
