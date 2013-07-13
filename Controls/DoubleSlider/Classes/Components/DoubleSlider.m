@@ -279,22 +279,22 @@ static const CGFloat colors [] = {
         
         if (point < sectionPosForSingleSlider[0]) {
             selectedValue = point * interval[0];
-            NSLog(@"[0][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[0][%.2f] min selected value %f", point, selectedValue);
             
         } else if (point < sectionPosForSingleSlider[1]) {
             selectedValue = calValueSectionWithSingleSlider(1) + (point - sectionPosForSingleSlider[0]) * interval[1];
-            NSLog(@"[1][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[1][%.2f] min selected value %f", point, selectedValue);
             
         } else if (point < sectionPosForSingleSlider[2]) {
             selectedValue = calValueSectionWithSingleSlider(2) + (point - sectionPosForSingleSlider[1]) * interval[2];
-            NSLog(@"[2][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[2][%.2f] min selected value %f", point, selectedValue);
             
         } else if (point < sectionPosForSingleSlider[3]) {
             selectedValue = calValueSectionWithSingleSlider(3) + (point - sectionPosForSingleSlider[2]) * interval[3];
-            NSLog(@"[3][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[3][%.2f] min selected value %f", point, selectedValue);
             
         } else {
-            NSLog(@"[4] min selected value not in any range %f", point);
+            //NSLog(@"[4] min selected value not in any range %f", point);
         }
         
     } else {
@@ -310,22 +310,22 @@ static const CGFloat colors [] = {
         
         if (point < sectionPos[0]) {
             selectedValue = point * interval[0];
-            NSLog(@"[0][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[0][%.2f] min selected value %f", point, selectedValue);
             
         } else if (point < sectionPos[1]) {
             selectedValue = calValueSection(1) + (point - sectionPos[0]) * interval[1];
-            NSLog(@"[1][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[1][%.2f] min selected value %f", point, selectedValue);
             
         } else if (point < sectionPos[2]) {
             selectedValue = calValueSection(2) + (point - sectionPos[1]) * interval[2];
-            NSLog(@"[2][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[2][%.2f] min selected value %f", point, selectedValue);
             
         } else if (point < sectionPos[3]) {
             selectedValue = calValueSection(3) + (point - sectionPos[2]) * interval[3];
-            NSLog(@"[3][%.2f] min selected value %f", point, selectedValue);
+            //NSLog(@"[3][%.2f] min selected value %f", point, selectedValue);
             
         } else {
-            NSLog(@"[4] min selected value not in any range %f", point);
+            //NSLog(@"[4] min selected value not in any range %f", point);
         }
     }
     
