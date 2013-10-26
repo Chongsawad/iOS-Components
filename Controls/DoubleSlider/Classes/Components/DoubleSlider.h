@@ -16,16 +16,18 @@
 #define BACKGROUND_HANDLE_BUTTON @"bt-handle-button.png"
 #define BACKGROUND_ON_BAR_HOVER @"bg-slide-bar-ac.png"
 
-#define kMinHandleDistance          0.0f
+
+static const float kMinHandleDistance = 0.0f;
+
 #define kBoundaryValueThreshold     0.001f
 #define kMovingAnimationDuration    0.3f
 
-static const float interval[4]     = {0.01f, 0.05f, 0.1f, 0.5f};
-static const float sectionWidth[4] = {170.f, 58.f, 45.f, 7.f};
-static const float sectionPos[4]   = {170.f, 228.f, 273.f, 280.f};
+static const float interval[5]     = {0, 0.01f, 0.05f, 0.1f, 0.5f};
+static const float sectionWidth[5] = {8 ,162.f, 58.f, 45.f, 999.f};
+static const float sectionPos[5]   = {8, 170.f, 228.f, 273.f, 280.f};
 
-static const float sectionWidthForSingleSlider[4] = {170.f, 58.f, 45.f, 999.f};
-static const float sectionPosForSingleSlider[4]   = {170.f, 228.f, 273.f, 999.f};
+static const float sectionWidthForSingleSlider[5] = {170.f, 58.f, 45.f, 999.f};
+static const float sectionPosForSingleSlider[5]   = {170.f, 228.f, 273.f, 999.f};
 
 static float calValueSection(int s) {
     if (s == 0) {
@@ -36,6 +38,8 @@ static float calValueSection(int s) {
         return interval[1] * sectionWidth[1] + interval[0] * sectionWidth[0];
     } else if (s == 3) {
         return interval[2] * sectionWidth[2] + interval[1] * sectionWidth[1] + interval[0] * sectionWidth[0];
+    } else if (s == 4) {
+        return interval[3] * sectionWidth[3] + interval[2] * sectionWidth[2] + interval[1] * sectionWidth[1] + interval[0] * sectionWidth[0];
     }
     return 0;
 }
